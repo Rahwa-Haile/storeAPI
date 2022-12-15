@@ -2,14 +2,17 @@ const express = require('express')
 const app = express()
 require('dotenv').config()
 const connectDB = require('./db/connect')
-const errorHandlerMiddleware = require('./Middlewares/errorHandler')
-const notFound = require('./Middlewares/not-found')
+const productsRouter = require('./routes/products')
+const errorHandlerMiddleware = require('./middlewares/errorHandler')
+const notFound = require('./middlewares/not-found')
+
 
 
 app.get('/', (req, res)=>{
-    res.status(200).send('<h1>Welcome to the store</h1><a href="api/v1/products">Products route</a>')
+    res.status(200).send('<h1>Welcome to the store</h1><a href="api/v2/products">Products route</a>')
 })
 
+app.use('/api/v2/products', productsRouter)
 app.use(notFound)
 app.use(errorHandlerMiddleware)
 
