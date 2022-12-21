@@ -4,16 +4,16 @@ require('express-async-errors')
 const getAllProductsStatic = async (req, res)=>{
     // throw new Error('Testing async error')
     const search = 'ab'
-    // const products = await Product.find({name: {$regex: search, $options: 'i'}})
-    const products = await Product.find()
-        .sort('name -price')
+    // const products = await Product.find({name: {$regex: search, $options: 'i'}, price: 42})
+    const products = await Product.find({price: {$lt: 30}})
+        .sort('price')
         .select('name price createdAt')
-        .limit(10)
-        .skip(5)
+        .limit(25)
+        .skip(0)
     res.status(200).json({ products, noOfhits: products.length })
 }
 const getAllProducts = async (req, res)=>{
-    const {featured, company, name, sort, fields} = req.query
+    const { featured, company, name, sort, fields, numericFilters } = req.query
     const queryObject = {}
 
     if(featured){
@@ -26,7 +26,35 @@ const getAllProducts = async (req, res)=>{
     if(name){
         queryObject.name = { $regex: name, $options: 'i'}
     }
-    // console.log(queryObject)
+    
+    if(numericFilters){
+        const operatorMap = {
+            '>' : '$gt',
+            '>=' : '$gte',
+            '=' : '$eq',
+            '<=' : '$lte',
+            '<' : '$lt',
+        }
+        // const filters =numericFilters.split(',')
+        const regEx = /\b(>|>=|=|<|<=)\b/g 
+        let filters = numericFilters.replace(regEx, (match)=>{
+            return `__${operatorMap[match]}__`
+        })
+
+        const options = ['price', 'rating']
+        filters = filters.split(',')
+        
+            filters.forEach((item)=>{
+            const [field, operator, value] = item.split('__')
+            if(options.includes(field)){
+                console.log(field, operator, value)
+                queryObject[field] = {[operator]: Number(value)}
+            }
+        })
+
+    }
+
+    console.log(queryObject)
    
      let result = Product.find(queryObject)
      if(sort){
